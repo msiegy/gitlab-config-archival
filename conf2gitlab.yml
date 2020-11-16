@@ -1,0 +1,30 @@
+---
+- hosts: all
+  gather_facts: yes
+  connection: network_cli
+
+  vars:
+    git_repo: gitlab-config-archival
+    backup_folder: config_backup
+    git_sync: enabled
+
+  tasks:
+  #- name: Gather Facts Multi Vendor OS
+    #debug: 
+      #var: ansible_net_hostname
+
+  - name: Copy config output to {{ backup_folder }} Folder for "{{ inventory_hostname }}"
+    copy:
+      content: "{{ansible_net_config}}"
+      dest: "{{ backup_folder }}/{{ inventory_hostname }}.cfg"
+
+  - name: Update gitlab {{ git_repo }} repo with config changes
+    command: "{{ item }}"
+    with_items:
+      - pwd
+      - git add .
+      - git commit -m "Ansible Config updates"
+      - git push
+    args:
+      chdir: "{{ backup_folder }}"
+    when: git_sync == "enabled"
